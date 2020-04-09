@@ -1,0 +1,39 @@
+{
+  "setting": {
+    "cards": [
+      {
+        "key": "b",
+        "image": "/public/images/b.png"
+      },
+      {
+        "key": "a",
+        "image": "/public/images/a.png"
+      },
+      {
+        "key": "h",
+        "image": "/public/images/h.png"
+      },
+      {
+        "key": "e",
+        "image": "/public/images/e.png"
+      },
+      {
+        "key": "d",
+        "image": "/public/images/d.png"
+      },
+      {
+        "key": "g",
+        "image": "/public/images/g.png"
+      },
+      {
+        "key": "f",
+        "image": "/public/images/f.png"
+      },
+      {
+        "key": "c",
+        "image": "/public/images/c.png"
+      }
+    ],
+    "pairs": ["a:b","c:d","e:f", "g:h"]
+  }
+}
