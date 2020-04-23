@@ -3,9 +3,13 @@ import Game from "./scenes/game";
 
 const config = {
   type: Phaser.AUTO,
-  parent: "phaser-example",
-  width: 1024,
-  height: 768,
+  scale: {
+    mode: Phaser.Scale.FIT,
+    parent: "phaser-example",
+    autoCenter: Phaser.Scale.CENTER_BOTH,
+    width: 1024,
+    height: 768,
+  },
   scene: [
     Game
   ]

@@ -7,6 +7,7 @@ const ASSET_SRC = 'src/assets/';
 const SERVER_URL = 'http://localhost:3000'
 const GAME_WIDTH = 1024;
 const GAME_HEIGHT = 768;
+const MS_DELAY = 1000;
 
 
 export default class Game extends Phaser.Scene {
@@ -18,12 +19,14 @@ export default class Game extends Phaser.Scene {
   }
 
   preload() {
-    let self = this;
-    // let test = JSON.parse('{"cards":[{"key":"b","image":"/public/images/b.png"},{"key":"a","image":"/public/images/a.png"},{"key":"h","image":"/public/images/e.png"},{"key":"e","image":"/public/images/e.png"},{"key":"d","image":"/public/images/d.png"},{"key":"g","image":"/public/images/g.png"},{"key":"f","image":"/public/images/c.png"},{"key":"c","image":"/public/images/c.png"}]}');
-    // console.log(test.cards);
+    let scene = this;
 
+    this.timerNow = 0;
+    this.timeoutSec = 0;
+    this.currentTurn = '';
     this.cards = [];
     this.correctPairs = [];
+    this.isGameStart = false;
 
     this.assets = [
       {
@@ -47,22 +50,23 @@ export default class Game extends Phaser.Scene {
       .then((res) => {
         console.log(res.data);
 
-        self.cards = res.data.setting.cards;
-        self.correctPairs = res.data.setting.pairs;
+        scene.timeoutSec = res.data.setting.timeout;
+        scene.cards = res.data.setting.cards;
+        scene.correctPairs = res.data.setting.pairs;
 
         // start load answer ssets
-        self.cards.forEach( card => {
+        scene.cards.forEach( card => {
           this.load.image(card.key, SERVER_URL + card.image);
         });
 
-        self.assets.forEach( asset => {
+        scene.assets.forEach( asset => {
           this.load.image(asset.key, asset.path);
         });
         
 
-        self.load.start();
+        scene.load.start();
 
-        self.loadAsset();
+        scene.loadAsset();
       });
     
     // this.load.on('progress', function (value) {
@@ -77,7 +81,9 @@ export default class Game extends Phaser.Scene {
       this.renderAnswer();
       this.renderCardBack();
       this.renderUI();
-      this.initWebSocket()
+      this.initWebSocket(this);
+
+      // this.socket.emit('setReady', this.socket.id);
     }, this);
   }
 
@@ -89,12 +95,12 @@ export default class Game extends Phaser.Scene {
   }
 
   create() {
-    self = this;
+    let scene = this;
 
     // set background Color
     this.cameras.main.backgroundColor = Phaser.Display.Color.HexStringToColor('#80BE1F');
 
-    // this.isPlayerA = false;
+    this.isPlayerA = false;
     // this.opponentCards = [];
     this.pairs = [];
     this.answers = [];
@@ -106,7 +112,7 @@ export default class Game extends Phaser.Scene {
 
       updateText : function() {
         var generateText = () => {
-          if (self.isPlayerA) {
+          if (scene.isPlayerA) {
             return {
               playerA: "YOU",
               playerB: "PLAYER B"
@@ -119,19 +125,19 @@ export default class Game extends Phaser.Scene {
           }
         }
 
-        self.playerUI.text = generateText();
+        scene.playerUI.text = generateText();
 
-        self.p1TextObj.setText(self.playerUI.text.playerA);
-        self.p2TextObj.setText(self.playerUI.text.playerB);
+        scene.p1TextObj.setText(scene.playerUI.text.playerA);
+        scene.p2TextObj.setText(scene.playerUI.text.playerB);
       }, 
 
       updateP1Score : function(score) {
-        console.log('BEFORE UPDATE SIZE: ' + self.p1Score.width);
-        var currentPos = self.p1Score.x;
-        self.p1Score.setText(score);
-        console.log('AFTER UPDATE SIZE: ' + self.p1Score.width);
+        // console.log('BEFORE UPDATE SIZE: ' + self.p1Score.width);
+        var currentPos = scene.p1Score.x;
+        scene.p1Score.setText(score);
+        console.log('AFTER UPDATE SIZE: ' + scene.p1Score.width);
 
-        self.p1Score.setX(self.playerUI.margin.leftRight);
+       scene.p1Score.setX(scene.playerUI.margin.leftRight);
       }
     }  
   }
@@ -144,7 +150,7 @@ export default class Game extends Phaser.Scene {
       }
     };
 
-
+    // Initialize game objects
     this.p1TextObj = this.add.text(this.playerUI.margin.leftRight, this.playerUI.margin.top, 'PLAYER A')
                           .setAlign('center')
                           .setOrigin(0.5, 0.5)
@@ -170,9 +176,10 @@ export default class Game extends Phaser.Scene {
                           .setOrigin(0.5, 0.5)
                           .setFontSize(24).setFontFamily('Helvetica').setColor('000000');
                 
-    this.timer = this.add.text((GAME_WIDTH/2), (this.playerUI.margin.top + 40), '99')
+    this.timerText = this.add.text((GAME_WIDTH/2), (this.playerUI.margin.top + 40), 'WAITING CONNECTION')
                           .setOrigin(0.5, 0.5)
                           .setFontSize(32).setFontFamily('Helvetica').setColor('000000');
+    // this.timerText.setVisible(false);
 
     this.revealButton = this.add.text((GAME_WIDTH/2), (GAME_HEIGHT - 80), 'REVEAL')
                       .setOrigin(0.5, 0.5)
@@ -238,6 +245,53 @@ export default class Game extends Phaser.Scene {
         this.restoreCardState(false);
       }
     }, this);
+
+    this.timerEvent = this.time.addEvent({
+      delay: MS_DELAY,
+      callback: this.onTimeout,
+      callbackScope: this,
+      loop: true
+    });
+
+    this.timerEvent.paused = true;
+  }
+
+  updateTurn(id) {
+    if (this.socket.id === id) {
+      if (this.timerEvent != undefined) {
+        this.timerEvent.paused = false;
+      }
+
+      this.timerNow = this.timeoutSec;
+    } else {
+      this.timerText.setText('ENEMY TURN');
+    }
+  }
+
+  passTurn() {
+    console.log(this.playerPosition);
+    var nextPlayer = this.playerPosition + 1;
+
+    if (nextPlayer === this.players.length) {
+      nextPlayer = 0;
+    }
+
+    if (this.currentTurn === this.socket.id) {
+      this.socket.emit('passTurn', this.players[nextPlayer]);
+      this.timerEvent.paused = true;
+    }
+  }
+
+  onTimeout() {
+    this.timerNow--;
+
+    this.timerText.setText(this.timerNow);
+
+    if (this.timerNow <= 0) {
+      this.timerNow = 0;
+      // this.timerNow = this.timeoutSec;
+      this.passTurn();
+    }
   }
 
   restoreCardState(isCorrect){
@@ -256,8 +310,6 @@ export default class Game extends Phaser.Scene {
 
     this.toggleNormalMode();
   }
-
-
 
   toggleAnswerMode() {
     this.answerBtn.setVisible(true)
@@ -357,26 +409,60 @@ export default class Game extends Phaser.Scene {
   }
 
   // WebSocket Function and Initialization
-  initWebSocket() {
+  initWebSocket(scene) {
     this.socket = io(SERVER_URL);
+    this.players = [];
+
     this.socket.on('connect', function() {
       console.log('Connection established...');
+      this.emit('setReady', this.id);
     });
     
-    this.socket.on('updatePlayers', function(players) {
-      console.log('PLAYERS ' + players);
 
-      self.isPlayerA = (players[0] === this.id) ? true : false;
-      self.updateUI.updateText();
+    this.socket.on('updatePlayers', function(players) {
+      scene.players = players;
+      scene.playerPosition = 0;
+      
+      for (let i = 0; i <= players.length; i++) {
+        if (this.id === players[i]) {
+          scene.playerPosition = i;
+
+          if (i === 0) {
+            scene.isPlayerA = true;
+            break;
+          }
+        }
+      }
+
+      // scene.isPlayerA = (players[0] === this.id) ? true : false;
+      scene.updateUI.updateText();
+
+      // check if player is ready 
+      if (players.length === 2 && scene.timerEvent != undefined) {
+        scene.timerEvent.pause = false;
+      }
     });
     
-    this.socket.on('dealCards', function() {
-      self.dealer.dealCards();
-      self.dealText.disableInteractive();
+
+    this.socket.on('updateTurn', function(id) {
+      scene.currentTurn = id;
+      scene.updateTurn(id);
+    })
+
+    this.socket.on('pauseGame', function(){
+      if (scene.timerEvent != undefined) {
+        scene.timerText.setText('User Disconnected');
+        scene.timerEvent.paused = true; 
+      }
     });
+    // ready
   }
 
   update() {
-
+    // if (this.isGameStart) {
+    //   var timeNow = this.timerEvent.getProgress();
+    //   this.timer.setText(timeNow.toString().substring(0, 1));
+    //   console.log(timeNow);
+    // }
   }
 }

@@ -9,7 +9,10 @@ const chance = require('chance').Chance();
 // Enable Cors
 app.use(cors());
 
+const TIMEOUT = 5;
 let players = [];
+let playerReady = [];
+let playerTurn = '';
 
 io.on('connection', function(socket) {
   console.log('A user connected ' + socket.id);
@@ -31,12 +34,32 @@ io.on('connection', function(socket) {
     io.emit('cardPlayed', gameObject, isPlayerA);
   });
 
+  socket.on('setReady', function(id) {
+    playerReady.push(id);
+    console.log('Player Ready' , playerReady);
+
+    if (playerReady.length >= 2) {
+      io.emit('updateTurn', players[0]);
+    }
+  });
+
+  socket.on('passTurn', function(id) {
+    console.log('passTurn', id);
+
+    io.emit('updateTurn', id);
+  });
+
   socket.on('disconnect', function() {
     console.log('A user disconnected', + socket.id);
     players = players.filter(player => player !== socket.id);
-    console.log(players);
+    playerReady = playerReady.filter(player => player !== socket.id);
+    
+    io.emit('pauseGame');
+    io.emit('updatePlayers', players);
   });
 });
+
+
 
 // serve static files
 app.use('/public', express.static(path.join(__dirname, 'public')));
@@ -59,6 +82,7 @@ app.get('/get-cards', function(req, res) {
 
   var answer  = {
     setting: {
+      timeout: TIMEOUT,
       cards: chance.shuffle(cardDB),
       pairs: correctPair
     }

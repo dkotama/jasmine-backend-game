@@ -1,5 +1,6 @@
 {
   "setting": {
+    "timeout": 30,
     "cards": [
       {
         "key": "b",
