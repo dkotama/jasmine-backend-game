@@ -1,16 +1,10 @@
-import CardBack from '../helpers/cardback';
-import Answer from '../helpers/answer';
-import io from 'socket.io-client';
-import axios from 'axios';
-
-const ASSET_SRC = 'src/assets/';
+const ASSET_SRC = '/public/game/src/assets/';
 const SERVER_URL = 'http://localhost:3000'
 const GAME_WIDTH = 1024;
 const GAME_HEIGHT = 768;
 const MS_DELAY = 1000;
 
-
-export default class Game extends Phaser.Scene {
+class Game extends Phaser.Scene {
 
   constructor() {
    super({
@@ -44,8 +38,6 @@ export default class Game extends Phaser.Scene {
     ];
 
 
-    // Get Game Setting and Load
-    // axios.get(SERVER_URL + '/public/json/setting.json')
     axios.get(SERVER_URL + '/get-cards')
       .then((res) => {
         console.log(res.data);
@@ -65,10 +57,8 @@ export default class Game extends Phaser.Scene {
         
 
         scene.load.start();
-
-        scene.loadAsset();
       });
-    
+      
     // this.load.on('progress', function (value) {
     //   console.log(value);
     // });
@@ -78,20 +68,13 @@ export default class Game extends Phaser.Scene {
     // });
      
     this.load.on('complete', function () {
+      console.log('load complete');
       this.renderAnswer();
       this.renderCardBack();
       this.renderUI();
       this.initWebSocket(this);
 
-      // this.socket.emit('setReady', this.socket.id);
     }, this);
-  }
-
-  loadAsset() {
-    // this.assets.forEach(asset => {
-    // }, this);
-
-    // this.load.start();
   }
 
   create() {
@@ -101,29 +84,26 @@ export default class Game extends Phaser.Scene {
     this.cameras.main.backgroundColor = Phaser.Display.Color.HexStringToColor('#80BE1F');
 
     this.isPlayerA = false;
-    // this.opponentCards = [];
+
     this.pairs = [];
     this.answers = [];
 
-    this.isPlayerA = false;
-
-
     this.updateUI = {
 
-      updateText : function() {
-        var generateText = () => {
-          if (scene.isPlayerA) {
-            return {
-              playerA: "YOU",
-              playerB: "PLAYER B"
-            }
-          } else {
-            return {
-              playerA: "PLAYER A",
-              playerB: "YOU"
-            }
+    updateText : function() {
+      var generateText = () => {
+        if (scene.isPlayerA) {
+          return {
+            playerA: "YOU",
+            playerB: "PLAYER B"
+          }
+        } else {
+          return {
+            playerA: "PLAYER A",
+            playerB: "YOU"
           }
         }
+      }
 
         scene.playerUI.text = generateText();
 
@@ -246,6 +226,7 @@ export default class Game extends Phaser.Scene {
       }
     }, this);
 
+    // add timer event
     this.timerEvent = this.time.addEvent({
       delay: MS_DELAY,
       callback: this.onTimeout,
@@ -283,19 +264,19 @@ export default class Game extends Phaser.Scene {
   }
 
   onTimeout() {
-    this.timerNow--;
-
     this.timerText.setText(this.timerNow);
 
-    if (this.timerNow <= 0) {
-      this.timerNow = 0;
+    if (this.timerNow < 0 ) {
+      // this.timerNow = 0;
       // this.timerNow = this.timeoutSec;
       this.passTurn();
     }
+
+    this.timerNow--;
   }
 
   restoreCardState(isCorrect){
-    if (this.pairs ) {
+    if (this.pairs.length > 0) {
       this.pairs[0].clearChosen();
       this.pairs[1].clearChosen();
     }
@@ -315,8 +296,6 @@ export default class Game extends Phaser.Scene {
     this.answerBtn.setVisible(true)
     this.passBtn.setVisible(true)
     this.revealButton.setVisible(false);
-
-    // start countdown
   }
 
   toggleNormalMode() {
@@ -376,7 +355,7 @@ export default class Game extends Phaser.Scene {
 
 
   pushPair(card)  {
-    // console.log('matching ' + card.tag);
+//     // console.log('matching ' + card.tag);
 
     for (let i=0; i < this.pairs.length; i++) {
 
@@ -408,7 +387,7 @@ export default class Game extends Phaser.Scene {
     return false
   }
 
-  // WebSocket Function and Initialization
+//   // WebSocket Function and Initialization
   initWebSocket(scene) {
     this.socket = io(SERVER_URL);
     this.players = [];
@@ -459,10 +438,10 @@ export default class Game extends Phaser.Scene {
   }
 
   update() {
-    // if (this.isGameStart) {
-    //   var timeNow = this.timerEvent.getProgress();
-    //   this.timer.setText(timeNow.toString().substring(0, 1));
-    //   console.log(timeNow);
-    // }
+//     // if (this.isGameStart) {
+//     //   var timeNow = this.timerEvent.getProgress();
+//     //   this.timer.setText(timeNow.toString().substring(0, 1));
+//     //   console.log(timeNow);
+//     // }
   }
 }

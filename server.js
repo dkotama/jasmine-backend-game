@@ -7,9 +7,8 @@ const io = require('socket.io')(http);
 const chance = require('chance').Chance();
 
 // Enable Cors
-app.use(cors());
 
-const TIMEOUT = 5;
+const TIMEOUT = 10;
 let players = [];
 let playerReady = [];
 let playerTurn = '';
@@ -63,6 +62,7 @@ io.on('connection', function(socket) {
 
 // serve static files
 app.use('/public', express.static(path.join(__dirname, 'public')));
+
 app.get('/get-cards', function(req, res) {
   var path = '/public/images/';
   var cardDB = [];
@@ -93,6 +93,13 @@ app.get('/get-cards', function(req, res) {
   res.status(200).send(JSON.stringify(answer));
 });
 
+
 http.listen(3000, function() {
   console.log('Server started!');
+});
+
+
+// routing
+app.get('/game', (req, res) => {
+  res.sendFile(__dirname + '/public/game/index.html');
 });

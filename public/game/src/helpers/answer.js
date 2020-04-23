@@ -1,6 +1,6 @@
-import Phaser from 'phaser';
+// import Phaser from 'phaser';
 
-export default class Answer extends Phaser.GameObjects.Sprite {
+class Answer extends Phaser.GameObjects.Sprite {
 
   constructor(scene, x, y, tag) {
     super(scene, x, y, tag);
