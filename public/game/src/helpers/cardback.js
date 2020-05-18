@@ -18,6 +18,7 @@ class CardBack extends Phaser.GameObjects.Sprite {
   }
 
   onClick() {
+    console.log(this.tag);
     this.isChosen = this.scene.pushPair(this);
     this.updateTint();
   }
