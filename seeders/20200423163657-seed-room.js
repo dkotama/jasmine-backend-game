@@ -57,3 +57,5 @@ module.exports = {
     return queryInterface.bulkDelete('Rooms', null, {});
   }
 };
+
+// TODO: Perbaiki Seeds ini, tambah seed class, save score ketika game over

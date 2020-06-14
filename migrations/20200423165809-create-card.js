@@ -14,10 +14,10 @@ module.exports = {
       image: {
         type: Sequelize.STRING
       },
-      roomId: {
+      classId: {
         type: Sequelize.INTEGER,
         references: {
-          model: 'Rooms',
+          model: 'Classes',
           key: 'id'
         }
       },

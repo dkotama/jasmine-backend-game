@@ -9,25 +9,11 @@ module.exports = {
         type: Sequelize.INTEGER
       },
       classId: {
-        type: Sequelize.INTEGER
-      },
-      timeout: {
-        type: Sequelize.INTEGER
-      },
-      correctMx: {
-        type: Sequelize.INTEGER
-      },
-      falseMx: {
-        type: Sequelize.INTEGER
-      },
-      maxPlayers: {
-        type: Sequelize.INTEGER
-      },
-      maxCards: {
-        type: Sequelize.INTEGER
-      },
-      pairs: {
-        type: Sequelize.STRING
+        type: Sequelize.INTEGER,
+        references: {
+          model: 'Classes',
+          key: 'id'
+        }
       },
       sequences: {
         type: Sequelize.STRING

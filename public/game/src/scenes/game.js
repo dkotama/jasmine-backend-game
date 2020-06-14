@@ -329,7 +329,7 @@ class Game extends Phaser.Scene {
                           .setFontSize(36).setFontFamily('Helvetica').setColor('white');
     this.overlayGroup.add(this.overlaySubtitle);
 
-    this.overlayScore = this.add.text((GAME_WIDTH/2), 370, 'SCORE 300')
+    this.overlayScore = this.add.text((GAME_WIDTH/2), 370, 'SCORE')
                           .setOrigin(0.5, 0.5)
                           .setFontSize(28).setFontFamily('Helvetica').setColor('white');
     this.overlayGroup.add(this.overlayScore);
