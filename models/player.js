@@ -8,8 +8,10 @@ module.exports = (sequelize, DataTypes) => {
   }, {
     timestamps: true
   });
+
   Player.associate = function(models) {
     Player.belongsTo(models.Room, {foreignKey: 'roomId', as: 'room'});
   };
+
   return Player;
 };

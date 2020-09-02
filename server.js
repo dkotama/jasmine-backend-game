@@ -8,6 +8,7 @@ const chance = require('chance').Chance();
 const bodyParser = require('body-parser');
 const multer = require('multer');
 const db = require('./models');
+const gameRoutes = require('./game_routes');
 
 
 
@@ -201,6 +202,9 @@ app.use(bodyParser.urlencoded({ extended: true }));
 // serve static files
 app.use('/public', express.static(path.join(__dirname, 'public')));
 
+// Routes
+app.use(gameRoutes);
+
 // Multer storage setup
 let upload = multer({
   storage: multer.diskStorage({
@@ -224,144 +228,142 @@ http.listen(3000, function() {
 
 
 // routing
-app.get('/game', (req, res) => {
-  let room = req.query.room;
-  let moodleId = req.query.mid;
+// app.get('/game', (req, res) => {
+//   let room = req.query.room;
+//   let moodleId = req.query.mid;
   
-  if (!moodleId || !room) {
-    res.sendStatus(404);
-  }
+//   if (!moodleId || !room) {
+//     res.sendStatus(404);
+//   }
 
-  return db.Room.findByPk(room, {include: ['players', 'cards']})
-    .then((room) => {
-      if (!room) return res.sendStatus(404);
+//   return db.Room.findByPk(room, {include: ['players', 'cards']})
+//     .then((room) => {
+//       if (!room) return res.sendStatus(404);
       
-      var isPlayerExist = false;
-      room.players.forEach(player => {
-        if (parseInt(moodleId) === player.moodleId) {
-          isPlayerExist = true;
-          return res.sendFile(__dirname + '/public/game/index.html');
-        }
-      });
+//       var isPlayerExist = false;
+//       room.players.forEach(player => {
+//         if (parseInt(moodleId) === player.moodleId) {
+//           isPlayerExist = true;
+//           return res.sendFile(__dirname + '/public/game/index.html');
+//         }
+//       });
 
-      if (!isPlayerExist) return res.sendStatus(404);
-    })
-    .catch((err) => {
-      console.err(JSON.stringify(err));
-      return res.send(err);
-    });
-});
+//       if (!isPlayerExist) return res.sendStatus(404);
+//     })
+//     .catch((err) => {
+//       console.err(JSON.stringify(err));
+//       return res.send(err);
+//     });
+// });
 
 // API 
 
-app.get('/api/rooms', (req, res) => {
-  return db.Room.findAll({
-    include: ['players', 'cards']
-  })
-    .then((room) => res.send(room))
-    .catch((err) => {
-      console.err(JSON.stringify(err));
-      return res.send(err);
-    });
-});
+// app.get('/api/rooms', (req, res) => {
+//   return db.Room.findAll({
+//     include: ['players', 'cards']
+//   })
+//     .then((room) => res.send(room))
+//     .catch((err) => {
+//       console.err(JSON.stringify(err));
+//       return res.send(err);
+//     });
+// });
 
-app.get('/api/rooms/:id', (req, res) => {
-  let id = req.params.id;
+// app.get('/api/rooms/:id', (req, res) => {
+//   let id = req.params.id;
 
-  return db.Room.findByPk(id, { include: ['players', 'cards']})
-    .then((room) => res.send(room))
-    .catch((err) => {
-      console.err(JSON.stringify(err));
-      return res.send(err);
-    });
-});
+//   return db.Room.findByPk(id, { include: ['players', 'cards']})
+//     .then((room) => res.send(room))
+//     .catch((err) => {
+//       console.err(JSON.stringify(err));
+//       return res.send(err);
+//     });
+// });
 
-// create new room
-app.post('/api/rooms', (req, res) => {
-  var classId = req.body.class_id;
-  var timeout = req.body.timeout;
-  var correctMx = req.body.correctmx;
-  var falseMx = req.body.falsemx;
-  var maxPlayers = req.body.max_players;
-  var pairs = req.body.pairs || null;
-  var sequences = req.body.sequences || null;
+// // create new room
+// app.post('/api/rooms', (req, res) => {
+//   var classId = req.body.class_id;
+//   var timeout = req.body.timeout;
+//   var correctMx = req.body.correctmx;
+//   var falseMx = req.body.falsemx;
+//   var maxPlayers = req.body.max_players;
+//   var pairs = req.body.pairs || null;
+//   var sequences = req.body.sequences || null;
 
-  return db.Room.create({
-    classId: classId })
-    .then((room) => res.status(200).send(room))
-    .catch((err) => {
-      console.error(JSON.stringify(err));
-      res.status(500).send(err);  
-    });
-});
+//   return db.Room.create({
+//     classId: classId })
+//     .then((room) => res.status(200).send(room))
+//     .catch((err) => {
+//       console.error(JSON.stringify(err));
+//       res.status(500).send(err);  
+//     });
+// });
 
-// updating rooms pairs or sequences
-app.put('/api/rooms/:id', (req, res) => {
-  const id = req.params.id;
-  const pairs = req.query['pairs'] || null;
-  const seq = req.query['sequences'] || null;
+// // updating rooms pairs or sequences
+// app.put('/api/rooms/:id', (req, res) => {
+//   const id = req.params.id;
+//   const pairs = req.query['pairs'] || null;
+//   const seq = req.query['sequences'] || null;
 
-  if (pairs == null && seq == null) {
-    return res.status(422);
-  }
+//   if (pairs == null && seq == null) {
+//     return res.status(422);
+//   }
 
-  return db.Room.findByPk(id)
-    .then((room) => {
-      if (pairs !== null) room.pairs = pairs;
+//   return db.Room.findByPk(id)
+//     .then((room) => {
+//       if (pairs !== null) room.pairs = pairs;
 
-      if (seq !== null) room.sequences = seq;
+//       if (seq !== null) room.sequences = seq;
 
-      room.save()
-          .then((room) => {
-            res.status(200).send(room);
-          })
-          .catch((err) => {
-            console.error(err);
-            return res.send(err);
-          });
+//       room.save()
+//           .then((room) => {
+//             res.status(200).send(room);
+//           })
+//           .catch((err) => {
+//             console.error(err);
+//             return res.send(err);
+//           });
 
-    })
-    .catch((err) => {
-      console.error(err);
-      return res.send(err);
-    });
-});
+//     })
+//     .catch((err) => {
+//       console.error(err);
+//       return res.send(err);
+//     });
+// });
 
-// post card image 
-app.post('/api/rooms/:id/cards', upload.single('image'), (req, res) => {
-  const id = req.params.id;
+// // post card image 
+// app.post('/api/rooms/:id/cards', upload.single('image'), (req, res) => {
+//   const id = req.params.id;
 
-  return db.Room.findByPk(id, { include: ['players', 'cards']})
-    .then((room) => {
-      if (parseInt(room.cards.length) < parseInt(room.maxCards)) {
+//   return db.Room.findByPk(id, { include: ['players', 'cards']})
+//     .then((room) => {
+//       if (parseInt(room.cards.length) < parseInt(room.maxCards)) {
 
-        db.Card.create({
-          number: parseInt(room.cards.length) + 1,
-          image: `/${req.file.path}`,
-          roomId: room.id
-        })
-        .then(card => {
-          res.status(200).send(card);
-        })
-        .catch((err) => {
-          console.error(err);
-          return res.send(err);
-        });
+//         db.Card.create({
+//           number: parseInt(room.cards.length) + 1,
+//           image: `/${req.file.path}`,
+//           roomId: room.id
+//         })
+//         .then(card => {
+//           res.status(200).send(card);
+//         })
+//         .catch((err) => {
+//           console.error(err);
+//           return res.send(err);
+//         });
 
-      } else {
-        res.status(500).send('overlimit');
-      }
+//       } else {
+//         res.status(500).send('overlimit');
+//       }
 
-    })
-    .catch((err) => {
-      console.error(err);
-      return res.send(err);
-    });
-});
+//     })
+//     .catch((err) => {
+//       console.error(err);
+//       return res.send(err);
+//     });
+// });
 
 // TODO: Attach Player 
-
-
 
 // helpers
 
