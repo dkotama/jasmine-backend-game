@@ -1,13 +1,11 @@
 'use strict';
+
+let Clazz = require('./clazz');
+
 module.exports = (sequelize, DataTypes) => {
   const Room = sequelize.define('Room', {
-    classId: { type: DataTypes.INTEGER, allowNull: false, unique: true },
-    timeout: { type: DataTypes.INTEGER, allowNull: true, defaultValue: 30 },
-    correctMx: { type: DataTypes.INTEGER, allowNull: true, defaultValue: 10 },
-    falseMX: { type: DataTypes.INTEGER, allowNull: true, defaultValue: 0 },
-    maxPlayers: { type: DataTypes.INTEGER, allowNull: true, defaultValue: 2 },
-    maxCards: { type: DataTypes.INTEGER, allowNull: true, defaultValue: 8 },
-    pairs: { type: DataTypes.STRING, allowNull: true, defaultValue: ''},
+    id: { type: DataTypes.INTEGER, primaryKey: true},
+    classId: { type: DataTypes.INTEGER, allowNull: false},
     sequences: { type: DataTypes.STRING, allowNull: true, defaultValue: ''},
     state: {
       type: DataTypes.INTEGER,
@@ -19,13 +17,9 @@ module.exports = (sequelize, DataTypes) => {
 
 
   Room.associate = function(models) {
-    Room.belongsTo(models.Class, {foreignKey: 'classId', as: 'class'});
+    Room.belongsTo(models.Clazz, {foreignKey: 'classId', as: 'clazz'});
+    Room.hasMany(models.Player, {as: 'players', foreignKey: 'roomId'});
   };
-
-  // Room.associate = function(models) {
-  //   Room.hasMany(models.Player, {as: 'players'});
-  //   Room.hasMany(models.Card, {as: 'cards'});
-  // };
 
   return Room;
 };

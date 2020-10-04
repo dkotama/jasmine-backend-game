@@ -8,11 +8,11 @@ module.exports = {
         primaryKey: true,
         type: Sequelize.INTEGER
       },
-      number: {
-        type: Sequelize.INTEGER
-      },
       image: {
         type: Sequelize.STRING
+      },
+      number: {
+        type: Sequelize.INTEGER
       },
       classId: {
         type: Sequelize.INTEGER,

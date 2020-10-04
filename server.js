@@ -1,16 +1,26 @@
 const express = require('express');
-const app = express();
 const cors = require('cors');
-const http = require('http').createServer(app);
 const path = require('path');
-const io = require('socket.io')(http);
 const chance = require('chance').Chance();
 const bodyParser = require('body-parser');
 const multer = require('multer');
 const db = require('./models');
+
+// declaring app after all plugin declaration
+const app = express();
+const http = require('http').createServer(app);
+const io = require('socket.io')(http);
+
+// set global constant to use at apps
+global.appRoot = path.resolve(__dirname);
+global.PAIRS_STATIC_LIMIT = 10;
+global.CARD_IMAGE_STATIC_PATH = '/public/images/';
+
+// Routes
 const gameRoutes = require('./game_routes');
-
-
+const apiRoutes = require('./api_routes');
+const clazzRoutes = require('./api/clazz');
+const pairRoutes = require('./api/pairs');
 
 // Enable Cors
 const TIMEOUT = 10;
@@ -203,22 +213,25 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use('/public', express.static(path.join(__dirname, 'public')));
 
 // Routes
+app.use(apiRoutes);
 app.use(gameRoutes);
+app.use(clazzRoutes);
+app.use(pairRoutes);
 
 // Multer storage setup
-let upload = multer({
-  storage: multer.diskStorage({
-    destination: (req, file, callback) => {
-      let path = './public/images';
-      callback(null, path);
-    },
-    filename: (req, file, callback) => {
-      //originalname is the uploaded file's name with extn
-      // just reusing random generator already declared and making pure random name
-      callback(null, chance.bb_pin() + path.extname(file.originalname))
-    }
-  })
-});
+// let upload = multer({
+//   storage: multer.diskStorage({
+//     destination: (req, file, callback) => {
+//       let path = './public/images';
+//       callback(null, path);
+//     },
+//     filename: (req, file, callback) => {
+//       //originalname is the uploaded file's name with extn
+//       // just reusing random generator already declared and making pure random name
+//       callback(null, chance.bb_pin() + path.extname(file.originalname))
+//     }
+//   })
+// });
 
 
 
@@ -227,141 +240,6 @@ http.listen(3000, function() {
 });
 
 
-// routing
-// app.get('/game', (req, res) => {
-//   let room = req.query.room;
-//   let moodleId = req.query.mid;
-  
-//   if (!moodleId || !room) {
-//     res.sendStatus(404);
-//   }
-
-//   return db.Room.findByPk(room, {include: ['players', 'cards']})
-//     .then((room) => {
-//       if (!room) return res.sendStatus(404);
-      
-//       var isPlayerExist = false;
-//       room.players.forEach(player => {
-//         if (parseInt(moodleId) === player.moodleId) {
-//           isPlayerExist = true;
-//           return res.sendFile(__dirname + '/public/game/index.html');
-//         }
-//       });
-
-//       if (!isPlayerExist) return res.sendStatus(404);
-//     })
-//     .catch((err) => {
-//       console.err(JSON.stringify(err));
-//       return res.send(err);
-//     });
-// });
-
-// API 
-
-// app.get('/api/rooms', (req, res) => {
-//   return db.Room.findAll({
-//     include: ['players', 'cards']
-//   })
-//     .then((room) => res.send(room))
-//     .catch((err) => {
-//       console.err(JSON.stringify(err));
-//       return res.send(err);
-//     });
-// });
-
-// app.get('/api/rooms/:id', (req, res) => {
-//   let id = req.params.id;
-
-//   return db.Room.findByPk(id, { include: ['players', 'cards']})
-//     .then((room) => res.send(room))
-//     .catch((err) => {
-//       console.err(JSON.stringify(err));
-//       return res.send(err);
-//     });
-// });
-
-// // create new room
-// app.post('/api/rooms', (req, res) => {
-//   var classId = req.body.class_id;
-//   var timeout = req.body.timeout;
-//   var correctMx = req.body.correctmx;
-//   var falseMx = req.body.falsemx;
-//   var maxPlayers = req.body.max_players;
-//   var pairs = req.body.pairs || null;
-//   var sequences = req.body.sequences || null;
-
-//   return db.Room.create({
-//     classId: classId })
-//     .then((room) => res.status(200).send(room))
-//     .catch((err) => {
-//       console.error(JSON.stringify(err));
-//       res.status(500).send(err);  
-//     });
-// });
-
-// // updating rooms pairs or sequences
-// app.put('/api/rooms/:id', (req, res) => {
-//   const id = req.params.id;
-//   const pairs = req.query['pairs'] || null;
-//   const seq = req.query['sequences'] || null;
-
-//   if (pairs == null && seq == null) {
-//     return res.status(422);
-//   }
-
-//   return db.Room.findByPk(id)
-//     .then((room) => {
-//       if (pairs !== null) room.pairs = pairs;
-
-//       if (seq !== null) room.sequences = seq;
-
-//       room.save()
-//           .then((room) => {
-//             res.status(200).send(room);
-//           })
-//           .catch((err) => {
-//             console.error(err);
-//             return res.send(err);
-//           });
-
-//     })
-//     .catch((err) => {
-//       console.error(err);
-//       return res.send(err);
-//     });
-// });
-
-// // post card image 
-// app.post('/api/rooms/:id/cards', upload.single('image'), (req, res) => {
-//   const id = req.params.id;
-
-//   return db.Room.findByPk(id, { include: ['players', 'cards']})
-//     .then((room) => {
-//       if (parseInt(room.cards.length) < parseInt(room.maxCards)) {
-
-//         db.Card.create({
-//           number: parseInt(room.cards.length) + 1,
-//           image: `/${req.file.path}`,
-//           roomId: room.id
-//         })
-//         .then(card => {
-//           res.status(200).send(card);
-//         })
-//         .catch((err) => {
-//           console.error(err);
-//           return res.send(err);
-//         });
-
-//       } else {
-//         res.status(500).send('overlimit');
-//       }
-
-//     })
-//     .catch((err) => {
-//       console.error(err);
-//       return res.send(err);
-//     });
-// });
 
 // TODO: Attach Player 
 

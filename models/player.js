@@ -1,6 +1,7 @@
 'use strict';
 module.exports = (sequelize, DataTypes) => {
   const Player = sequelize.define('Player', {
+    id: { type: DataTypes.INTEGER, primaryKey: true },
     moodleId: DataTypes.INTEGER,
     name: DataTypes.INTEGER,
     roomId: DataTypes.INTEGER,

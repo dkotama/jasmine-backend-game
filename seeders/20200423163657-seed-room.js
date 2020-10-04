@@ -5,43 +5,67 @@ module.exports = {
     return queryInterface.bulkInsert('Rooms', [
     {
       id: 1,
-      timeout: 30,
       classId: 1,
-      maxPlayers: 2,
-      maxCards: 8,
-      correctMx: 100,
-      falseMx: -50,
-      pairs: '1:2,3:4,5:6,7:8',
       sequences: '1,3,2,4,5,8,7,6',
       createdAt: new Date(),
       updatedAt: new Date()
     },
     {
       id: 2,
-      timeout: 30,
       classId: 1,
-      maxPlayers: 2,
-      maxCards: 8,
-      correctMx: 200,
-      falseMx: 0,
-      pairs: '1:2,3:4,5:6,7:8',
-      sequences: '1,3,2,4,5,8,7,6',
+      sequences: '1,8,7,3,1,6,4,5',
       createdAt: new Date(),
       updatedAt: new Date()
     },
     {
       id: 3,
-      timeout: 30,
       classId: 1,
-      maxPlayers: 2,
-      maxCards: 8,
-      correctMx: 100,
-      falseMx: 0,
-      pairs: '1:2,3:4,5:6,7:8',
-      sequences: '1,8,2,7,3,6,4,5',
+      sequences: '6,4,3,5,1,7,8,2',
       createdAt: new Date(),
       updatedAt: new Date()
-    }
+    },
+    {
+      id: 4,
+      classId: 2,
+      sequences: '1,3,2,4,5,8,7,6',
+      createdAt: new Date(),
+      updatedAt: new Date()
+    },
+    {
+      id: 5,
+      classId: 2,
+      sequences: '1,8,7,3,1,6,4,5',
+      createdAt: new Date(),
+      updatedAt: new Date()
+    },
+    {
+      id: 6,
+      classId: 2,
+      sequences: '6,4,3,5,1,7,8,2',
+      createdAt: new Date(),
+      updatedAt: new Date()
+    },
+    {
+      id: 7,
+      classId: 3,
+      sequences: '1,3,2,4,5,8,7,6',
+      createdAt: new Date(),
+      updatedAt: new Date()
+    },
+    {
+      id: 8,
+      classId: 3,
+      sequences: '1,8,7,3,1,6,4,5',
+      createdAt: new Date(),
+      updatedAt: new Date()
+    },
+    {
+      id: 9,
+      classId: 3,
+      sequences: '6,4,3,5,1,7,8,2',
+      createdAt: new Date(),
+      updatedAt: new Date()
+    },
   ], {})
   },
 
@@ -57,5 +81,3 @@ module.exports = {
     return queryInterface.bulkDelete('Rooms', null, {});
   }
 };
-
-// TODO: Perbaiki Seeds ini, tambah seed class, save score ketika game over

@@ -8,10 +8,10 @@ module.exports = {
         primaryKey: true,
         type: Sequelize.INTEGER
       },
-      timeout: {
+      moodleId: {
         type: Sequelize.INTEGER
       },
-      moodleId: {
+      timeout: {
         type: Sequelize.INTEGER
       },
       correctMx: {
@@ -26,12 +26,13 @@ module.exports = {
       maxCards: {
         type: Sequelize.INTEGER
       },
-      isOngoing: {
-        type: Sequelize.BOOLEAN
-      },
       pairs: {
         type: Sequelize.STRING,
         default: ''
+      },
+      isOngoing: {
+        type: Sequelize.BOOLEAN,
+        defaultValue: false
       },
       createdAt: {
         allowNull: false,
