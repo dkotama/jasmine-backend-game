@@ -13,14 +13,14 @@ const io = require('socket.io')(http);
 
 // set global constant to use at apps
 global.appRoot = path.resolve(__dirname);
-global.PAIRS_STATIC_LIMIT = 10;
+global.PAIRS_STATIC_LIMIT = 8;
 global.CARD_IMAGE_STATIC_PATH = '/public/images/';
 
 // Routes
 const gameRoutes = require('./game_routes');
-const apiRoutes = require('./api_routes');
 const clazzRoutes = require('./api/clazz');
 const pairRoutes = require('./api/pairs');
+const roomRoutes = require('./api/rooms');
 
 // Enable Cors
 const TIMEOUT = 10;
@@ -213,33 +213,14 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use('/public', express.static(path.join(__dirname, 'public')));
 
 // Routes
-app.use(apiRoutes);
 app.use(gameRoutes);
 app.use(clazzRoutes);
 app.use(pairRoutes);
-
-// Multer storage setup
-// let upload = multer({
-//   storage: multer.diskStorage({
-//     destination: (req, file, callback) => {
-//       let path = './public/images';
-//       callback(null, path);
-//     },
-//     filename: (req, file, callback) => {
-//       //originalname is the uploaded file's name with extn
-//       // just reusing random generator already declared and making pure random name
-//       callback(null, chance.bb_pin() + path.extname(file.originalname))
-//     }
-//   })
-// });
-
-
+app.use(roomRoutes);
 
 http.listen(3000, function() {
   console.log('Server started!');
 });
-
-
 
 // TODO: Attach Player 
 

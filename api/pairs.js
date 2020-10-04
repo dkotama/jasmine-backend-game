@@ -6,6 +6,8 @@ const path = require('path');
 const { Sequelize } = require('../models');
 const db = require('../models');
 const clazz = require('../models/clazz');
+const Chance = require('chance');
+const chance = new Chance();
 
 let storage = multer.diskStorage({
     destination: function(req, file, cb) {
@@ -14,7 +16,7 @@ let storage = multer.diskStorage({
 
     // By default, multer removes file extensions so let's add them back
     filename: function(req, file, cb) {
-        cb(null, file.fieldname + '-' + Date.now() + path.extname(file.originalname));
+        cb(null, chance.string({ length: 5, pool: 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'}) + path.extname(file.originalname));
     }
 });
 
@@ -59,19 +61,6 @@ router.put('/api/pairs', cardUpload.array('images', 2), (req, res, next) => {
           console.error(JSON.stringify(err));
           res.status(500).send(err);  
         });   
-        // for each ids on body iterate and search in Clazz.cards
-        // body.ids.forEach((id, i) => {
-        //   clazz.cards.forEach((card) => {
-        //     if (card.number == parseInt(id)) {
-
-        //       card.image = staticPath + body.files[i].filename;
-        //       clazz.save();
-        //       return;
-        //     }
-        //   });
-        // });
-
-        // return res.send(clazz);
       } catch (error) {
         console.log(error);
         return res.sendStatus(400);
@@ -79,60 +68,5 @@ router.put('/api/pairs', cardUpload.array('images', 2), (req, res, next) => {
     });
 
 });
-
-// router.get('/api/pairs', (req, res) => {
-//   if (!req.query.id) 
-//     return res
-//           .header('Content-Type', 'application/json')
-//           .status(422)
-//           .send("Params class_id is required");
-
-//   let classId = req.query.id;
-
-//   Clazz.findOne({ where: {moodleId : classId}})
-//     .then((clazz) => {
-//       if (typeof clazz == 'undefined' || !clazz) return res.send(404);
-
-//       return res.send(clazz);
-//     })
-//     .catch((err) => {
-//       console.error(JSON.stringify(err));
-//       res.status(500).send(err);  
-//     });   
-  
-// });
-
-
-// Update Class
-// router.put('/api/classes', (req, res) => {
-//   if (!req.query.id) 
-//     return res
-//             .header('Content-Type', 'application/json')
-//             .status(422)
-//             .send("Params class_id is required");
-
-//   let classId = req.query.id;
-
-//   var edited = {};
-
-//   (!req.body.timeout) ? edited.timeout = parseInt(req.body.timeout) : null;
-//   (!req.body.correctMx) ? edited.correctMx = parseInt(req.body.timeout) : null;
-//   (!req.body.falseMx) ? edited.falseMx = parseInt(req.body.timeout) : null;
-//   (!req.body.pairs ) ? edited.timeout = parseInt(req.body.timeout) : null;
-
-//   res.send(edited);
-
-//   db.Clazz.findOne({ where: {moodleId : classId}})
-//     .then((clazz) => {
-//       if (typeof clazz == 'undefined' || !clazz) return res.send(404);
-
-//       return res.send(clazz.update(edited));
-//     })
-//     .catch((err) => {
-//       console.error(JSON.stringify(err));
-//       res.status(500).send(err);  
-//     });   
-  
-// });
 
 module.exports = router;

@@ -5,7 +5,7 @@ module.exports = (sequelize, DataTypes) => {
     moodleId: DataTypes.INTEGER,
     name: DataTypes.INTEGER,
     roomId: DataTypes.INTEGER,
-    score: DataTypes.INTEGER
+    score: { type: DataTypes.INTEGER, defaultValue: 0 }
   }, {
     timestamps: true
   });

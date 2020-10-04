@@ -3,76 +3,164 @@ const router = express.Router();
 const Chance = require('chance');
 const chance = new Chance();
 const db = require('../models');
-let FIXED_PAIRS = [1,2,3,4,5,6,7,8,9,10];
+const room = require('../models/room');
+let FIXED_PAIRS = [1,2,3,4,5,6,7,8];
 
 router.post('/api/rooms', (req, res) => {
-  if (!req.body.class_id) res.header('Content-Type', 'application/json').status(422).send("Class ID is required");
+  if (!req.query.class_id) res.header('Content-Type', 'application/json').status(422).send("Class ID is required");
 
-  // seed is how much room that will made default is 1
-  var seed =  10;
-  var pairs = [];
-
-  for (let s = 0; index < seed; s++) {
-    var rand = chance.shuffle(FIXED_PAIRS);
-    pairs.push(rand);
-  }
-
-  return res.send(pairs);
-  // var newRoom = {};
-
-  // TODO: randomize pair, to string, save,
-  // make delete, make add, put to add players
-
-  // newClass.moodleId = parseInt(req.body.moodle_id);
-  // newClass.timeout = (!req.body.timeout) ? 30 : parseInt(req.body.timeout); 
-  // newClass.correctMx = (!req.body.correctmx) ? 10 : parseInt(req.body.correct_mx);
-  // newClass.falseMx = (!req.body.falsemx) ? 0 : parseInt(req.body.false_mx);
-  // newClass.maxPlayers = (!req.body.max_players) ? 2 : parseInt(req.body.max_players);
-  // NOTE : Card Pairs is updated after class is made
-
-  // return db.Clazz.create(newClass)
-  //   .then((clazz) => {
-  //     // generate pairs sesuai limit  
-
-  //     var cards = [];
-  //     for (let c = 1; c <= global.PAIRS_STATIC_LIMIT; c++) {
-  //       let card = { classId: clazz.id, number: c};
-  //       cards.push(card);
-  //     }
-      
-  //     console.log("Create Clazz success\nbulk insert cards", cards);
-  //     db.Card.bulkCreate(cards)
-  //       .then((cards) => {
-  //         res.status(200).send(clazz);
-  //       })
-  //       .catch((err) => {
-  //         console.error(err);
-  //         res.status(500).send(err);  
-  //       });   
-  //     })
-  //   .catch((err) => {
-  //     console.error(err);
-  //     res.status(500).send(err);  
-  //   });   
-});
+  let classId = req.query.class_id;
+  var seed = (typeof req.body.seed != "undefined") ? req.body.seed : 1;
+  var rooms = [];
 
 
-router.get('/api/classes', (req, res) => {
-  if (!req.query.id && !req.query.moodle_id)
-    return res
-          .header("Content-Type", "application/json")
-          .status(422)
-          .send("Params id or moodle_id required");
-
-  let moodleId = (typeof req.query.moodle_id != 'undefined') ? parseInt(req.query.moodle_id) : null;
-  let classId = parseInt(req.query.id);
-  let filter = (moodleId != null) ? { where : { moodleId : moodleId } } : { where: { id: classId } };
-
-  db.Clazz.findOne(filter)
+  db.Clazz.findOne({ where: {id : classId } })
     .then((clazz) => {
       if (typeof clazz == 'undefined' || !clazz) return res.sendStatus(404);
 
-      return res.send(clazz);
+      for (let s = 0; s < seed; s++) {
+        var room = {};
+        room.classId = clazz.id;
+        room.sequences = (chance.shuffle(FIXED_PAIRS)).toString();
+
+        rooms.push(room);
+      }
+
+      db.Room.bulkCreate(rooms, { returning: true })
+        .then(rs => {
+          db.Room.findAll({where: {classId: clazz.id}})
+            .then((rooms) => {
+              return res.send(rooms);
+            })
+        })
+        .catch((err) => {
+          console.error(JSON.stringify(err));
+          res.status(500).send(err);  
+        });   
+    })
+    .catch((err) => {
+      console.error(JSON.stringify(err));
+      res.status(500).send(err);  
+    });   
+
+});
+
+// Get Single Room for Game API
+router.get('/api/rooms/:id', (req, res) => {
+  let id = req.params.id;
+
+  // return res.send(id);
+  return db.Room.findByPk(id, { include: ['players']})
+    .then((room) => {
+      if (!room) { res.send(404) };
+
+      // var clazz = null;
+      
+      db.Clazz.findByPk(room.classId, {include: ['cards'] })
+      .then((clazz) => {
+        if (!clazz) { res.send(500) };
+
+        var temp = {};
+        // let clazz = room.clazz;
+
+        temp.id = room.id
+        temp.moodleId = clazz.moodleId;
+        temp.timeout = clazz.timeout;
+        temp.correctMx = clazz.correctMx;
+        temp.falseMx = clazz.falseMx;
+        temp.maxPlayers = clazz.maxPlayers;
+        temp.maxCards = clazz.maxCards;
+        temp.pairs = clazz.pairs;
+        temp.sequences = room.sequences;
+        temp.isOngoing = room.isOngoing;
+        temp.players = room.players;
+        temp.cards = clazz.cards;
+
+        return res.send(temp);
+
+      });
+
+    }) 
+    .catch((err) => {
+      console.log(JSON.stringify(err));
+      return res.send(err);
+    });
+});
+
+
+// Attach player to Room
+router.post('/api/rooms/attach', (req, res) => {
+  if (!req.query.id)
+    return res
+          .header("Content-Type", "application/json")
+          .status(422)
+          .send("Params room id is required");
+
+  let roomId = parseInt(req.query.id);
+
+  db.Room.findOne({where : {id: roomId}})
+    .then((room) => {
+      if (typeof room == 'undefined' || !room) return res.sendStatus(404);
+
+      var players = [];
+
+      var body = {};
+      body.moodleIds = req.body.moodle_id;
+      body.names = req.body.name;
+
+      body.moodleIds.forEach((b, i) => {
+        var player = {};
+        player.roomId = room.id;
+        player.moodleId = b;
+        player.name =  body.names[i];
+        players.push(player);
+      });
+
+      db.Player.findAll({where: {roomId: room.id}})
+        .then(_players => {
+          if (_players.length == 0) {
+            // empty 
+            db.Player.bulkCreate(players)
+              .then(__players => {
+                return res.send(players);
+              });
+          }
+
+          // update if exist
+
+          _players.forEach((p, i) =>  {
+            p.moodleId = players[i].moodleId;
+            p.name = players[i].name;
+
+            players[i].id = p.id;
+
+            p.save();
+          });
+
+          return res.send(players);
+        });
+    })
+    .catch((err) => {
+      console.error(JSON.stringify(err));
+      res.status(500).send(err);  
+    });   
+});
+
+// Get All Rooms in a Class
+router.get('/api/rooms', (req, res) => {
+  if (!req.query.class_id)
+    return res
+          .header("Content-Type", "application/json")
+          .status(422)
+          .send("Params class_id is required");
+
+  let classId = parseInt(req.query.class_id);
+
+  db.Room.findAll({ where: { classId: classId } })
+    .then((rooms) => {
+      if (typeof rooms == 'undefined' || !rooms) return res.sendStatus(404);
+
+      return res.send(rooms);
     })
     .catch((err) => {
       console.error(JSON.stringify(err));
@@ -83,29 +171,21 @@ router.get('/api/classes', (req, res) => {
 
 
 // Update Class
-router.put('/api/classes', (req, res) => {
+router.delete('/api/rooms', (req, res) => {
   if (!req.query.id) 
     return res
             .header('Content-Type', 'application/json')
             .status(422)
             .send("Params class_id is required");
 
-  let classId = req.query.id;
+  let roomId = req.query.id;
 
-  var edited = {};
+  db.Room.findOne({ where: {id : roomId}})
+    .then((room) => {
+      if (typeof room == 'undefined' || !room) return res.sendStatus(404);
+      room.destroy();
 
-  (!req.body.timeout) ? edited.timeout = parseInt(req.body.timeout) : null;
-  (!req.body.correctMx) ? edited.correctMx = parseInt(req.body.timeout) : null;
-  (!req.body.falseMx) ? edited.falseMx = parseInt(req.body.timeout) : null;
-  (!req.body.pairs ) ? edited.timeout = parseInt(req.body.timeout) : null;
-
-  res.send(edited);
-
-  db.Clazz.findOne({ where: {moodleId : classId}})
-    .then((clazz) => {
-      if (typeof clazz == 'undefined' || !clazz) return res.sendStatus(404);
-
-      return res.send(clazz.update(edited));
+      return res.sendStatus(200);
     })
     .catch((err) => {
       console.error(JSON.stringify(err));
@@ -113,5 +193,6 @@ router.put('/api/classes', (req, res) => {
     });   
   
 });
+
 
 module.exports = router;

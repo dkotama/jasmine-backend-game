@@ -11,7 +11,7 @@ module.exports = (sequelize, DataTypes) => {
     falseMX: { type: DataTypes.INTEGER, allowNull: true, defaultValue: 0 },
     maxPlayers: { type: DataTypes.INTEGER, allowNull: true, defaultValue: 2 },
     maxCards: { type: DataTypes.INTEGER, allowNull: true, defaultValue: 10 },
-    pairs: { type: DataTypes.STRING, allowNull: true, defaultValue: '1:2,3:4,5:6,7:8,9:10'},
+    pairs: { type: DataTypes.STRING, allowNull: true, defaultValue: '1:2,3:4,5:6,7:8'},
     isOngoing: { type: DataTypes.BOOLEAN, defaultValue: false},
   }, {
     tableName: 'Classes',

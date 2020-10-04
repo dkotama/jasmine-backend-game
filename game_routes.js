@@ -19,7 +19,7 @@ gameroute.get('/game', (req, res) => {
       roomId: parseInt(rid)
     },
   }).then((player) => {
-    if (!player) return res.send(404);
+    if (!player) return res.sendStatus(404);
     
     return res.sendFile(__dirname + '/public/game/index.html');
     // return res.send(player);  
