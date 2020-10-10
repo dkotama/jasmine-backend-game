@@ -51,6 +51,7 @@ class Game extends Phaser.Scene {
 
     axios.get(SERVER_URL + '/api/rooms/' + ROOM_ID)
       .then((res) => {
+        console.log(res.header);
 
         scene.timeoutSec = res.data.timeout;
         scene.cards = res.data.cards;
@@ -59,6 +60,7 @@ class Game extends Phaser.Scene {
         scene.falseMx = res.data.falseMx;
         scene.sequences = res.data.sequences.split(',');
         scene.correctPairs = res.data.pairs.split(',');
+        scene.playersInfo = res.data.players;
 
         // start load answer ssets
         scene.cards.forEach( card => {
@@ -73,6 +75,12 @@ class Game extends Phaser.Scene {
         
 
         scene.load.start();
+      })
+      .catch(error => {
+          console.log(error.response.status);
+          if (error.response.status === 400) {
+            this.gameFinished();
+          }
       });
     
     // print out the asset loader progress
@@ -86,6 +94,9 @@ class Game extends Phaser.Scene {
     // });
      
     // callback when asset loader completed loading
+    // load audio
+    this.load.audio('theme_song', [`${SERVER_URL}${ASSET_SRC}theme_song.ogg`]);
+
     this.load.on('complete', function () {
       console.log('load complete');
       this.renderUI();
@@ -94,7 +105,28 @@ class Game extends Phaser.Scene {
     }, this);
   }
 
+  gameFinished() {
+    this.timerText.setText('Game Finished');
+  }
+
   startGame() {
+    //render music
+    // let themeSong = this.sound.add('theme_song');
+    // themeSong.setLoop(true);
+    // themeSong.play();
+    
+    // this..addDownCallback(function() {
+    //   if (game.sound.context.state === 'suspended') {
+    //     this.sound.context.resume();
+    //   }
+    // })
+
+    // this.setInteractive().on('pointerdown', (pointer) => {
+    //   if (game.sound.context.state === 'suspended') {
+    //     this.sound.context.resume();
+    //   }
+    // });
+
     this.isGameStart = true;
     this.renderAnswer();
     this.renderCardBack();
@@ -129,14 +161,34 @@ class Game extends Phaser.Scene {
       var p1 = '';
       var p2 = '';
 
+      // Load Name based on api result
+
+      // TODO: Load Player Name
+
       if (scene.isPlayerA) {
         p1 = "YOU";
         p2 = "PLAYER 2";
+
+        if (scene.playersInfo[0].moodleId == parseInt(MOODLE_ID)) {
+          p2 = scene.playersInfo[1].name;
+        } else {
+          p2 = scene.playersInfo[0].name;
+        }
+
       } else {
         p1 = "PLAYER 1";
         p2 = "YOU";
+
+        if (scene.playersInfo[0].moodleId == parseInt(MOODLE_ID)) {
+          p1 = scene.playersInfo[1].name;
+        } else {
+          p1 = scene.playersInfo[0].name;
+        }
       }
 
+      // matching if p1 = first players on api result
+      this.p1Name = p1;
+      this.p2Name = p2;
       scene.p1TextObj.setText(p1);
       scene.p2TextObj.setText(p2);
     }, 
@@ -251,7 +303,7 @@ class Game extends Phaser.Scene {
             if (p === c) {
               isAnswerCorrect = true;
               console.log('CORRECT ANSWER');
-
+              console.log()
               // removing cardback
               this.cardGrid.remove(this.pairs[0], true, true);
               this.cardGrid.remove(this.pairs[1], true, true);
@@ -324,7 +376,7 @@ class Game extends Phaser.Scene {
                           .setFontSize(48).setFontFamily('Helvetica').setColor('white');
     this.overlayGroup.add(this.overlayTitle);
 
-    this.overlaySubtitle = this.add.text((GAME_WIDTH/2), 320, 'Player 1 WIN')
+    this.overlaySubtitle = this.add.text((GAME_WIDTH/2), 320, 'WINNING CONDITION')
                           .setOrigin(0.5, 0.5)
                           .setFontSize(36).setFontFamily('Helvetica').setColor('white');
     this.overlayGroup.add(this.overlaySubtitle);
@@ -353,13 +405,13 @@ class Game extends Phaser.Scene {
             _scene.overlaySubtitle.setText('YOU WIN');
             _scene.overlayScore.setText('SCORE ' + players[0].score);
           } else if (players[1].isLeading){
-            _scene.overlaySubtitle.setText('PLAYER 2 WIN');
-            _scene.overlayScore.setText('SCORE ' + players[1].score);
+            _scene.overlaySubtitle.setText(`ENEMY WIN`);
+            _scene.overlayScore.setText('YOUR SCORE  ' + players[0].score);
           }
         } else {
           if (players[0].isLeading) {
-            _scene.overlaySubtitle.setText('PLAYER 1 WIN');
-            _scene.overlayScore.setText('SCORE ' + players[0].score);
+            _scene.overlaySubtitle.setText(`ENEMY WIN`);
+            _scene.overlayScore.setText('YOUR SCORE  ' + players[1].score);
           } else if (players[1].isLeading){
             _scene.overlaySubtitle.setText('YOU WIN');
             _scene.overlayScore.setText('SCORE ' + players[1].score);
@@ -493,6 +545,7 @@ class Game extends Phaser.Scene {
         return false;
       }
     }
+
     console.log(this.pairs);
 
     if (this.pairs.length < 2) {

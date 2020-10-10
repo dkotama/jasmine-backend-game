@@ -8,7 +8,7 @@ module.exports = (sequelize, DataTypes) => {
     moodleId: { type: DataTypes.INTEGER, allowNull: false, unique: true },
     timeout: { type: DataTypes.INTEGER, allowNull: true, defaultValue: 30 },
     correctMx: { type: DataTypes.INTEGER, allowNull: true, defaultValue: 10 },
-    falseMX: { type: DataTypes.INTEGER, allowNull: true, defaultValue: 0 },
+    falseMx: { type: DataTypes.INTEGER, allowNull: true, defaultValue: 0 },
     maxPlayers: { type: DataTypes.INTEGER, allowNull: true, defaultValue: 2 },
     maxCards: { type: DataTypes.INTEGER, allowNull: true, defaultValue: 10 },
     pairs: { type: DataTypes.STRING, allowNull: true, defaultValue: '1:2,3:4,5:6,7:8'},

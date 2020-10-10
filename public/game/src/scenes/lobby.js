@@ -53,7 +53,7 @@ class Lobby extends Phaser.Scene {
     this.load.on('fileprogress', function (file) {
       console.log(file.src);
     });
-     
+    
     this.load.on('complete', function () {
       // console.log('load complete');
       // this.renderAnswer();

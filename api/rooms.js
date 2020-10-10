@@ -54,14 +54,14 @@ router.get('/api/rooms/:id', (req, res) => {
     .then((room) => {
       if (!room) { res.send(404) };
 
-      // var clazz = null;
-      
+      // Double query to get sequences from room
       db.Clazz.findByPk(room.classId, {include: ['cards'] })
       .then((clazz) => {
-        if (!clazz) { res.send(500) };
+        if (!clazz) { res.sendStatus(500) };
+        if (room.state == 1) return res.status(400).send('Game is Finished');
 
         var temp = {};
-        // let clazz = room.clazz;
+        console.log(clazz.falseMx);
 
         temp.id = room.id
         temp.moodleId = clazz.moodleId;

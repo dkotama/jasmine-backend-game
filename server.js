@@ -21,6 +21,7 @@ const gameRoutes = require('./game_routes');
 const clazzRoutes = require('./api/clazz');
 const pairRoutes = require('./api/pairs');
 const roomRoutes = require('./api/rooms');
+const { parse } = require('path');
 
 // Enable Cors
 const TIMEOUT = 10;
@@ -137,6 +138,8 @@ io.on('connection', function(socket) {
     emitToRooms(room, 'updateScore', room.players);
     emitToRooms(room, 'updateRevealed', data.revealed);
 
+    console.log("cardsLeft " , room.cardsLeft);
+
     if (room.cardsLeft <= 0) {
       var players = room.players;
 
@@ -154,8 +157,40 @@ io.on('connection', function(socket) {
         }
       }
 
-      // console.log('Game Overy', players);
-      emitToRooms(room, 'gameOver', players);
+      var _tempPlayers = players;
+
+      // Todo: update room state
+      db.Room.findByPk(parseInt(room.id))
+        .then(room => {
+          room.state = 1;
+          room.save();
+          
+
+          db.Player.findAll({ where: { roomId: parseInt(room.id) } })
+            .then(plyrs => {
+              // plyrs.forEach(p => {
+              //   console.log(p);
+              // });
+              //update score
+              // console.log('Updating players scores ', plyrs);
+              plyrs.forEach((p, i) => {
+                // console.log(`Saving score for ${p.moodleId} - ${parseInt(players[i].id)}`);
+                // p.score = 30;
+                if (p.moodleId == parseInt(players[0].mid)) {
+                 console.log('Saving p1 score', players[0].score);
+                  p.score = players[0].score;
+                } else if (p.moodleId == parseInt(players[1].mid)){
+                  console.log('Saving p2 score', players[1].score);
+                  p.score = players[1].score;
+                }
+
+                p.save();
+              });
+            });
+        })
+      
+      // emitToRooms(room, 'gameOver', players);
+      emitToRooms(room, 'gameOver', _tempPlayers);
     }
   });
 
@@ -221,8 +256,6 @@ app.use(roomRoutes);
 http.listen(3000, function() {
   console.log('Server started!');
 });
-
-// TODO: Attach Player 
 
 // helpers
 
