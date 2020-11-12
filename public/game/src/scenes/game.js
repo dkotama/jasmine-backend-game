@@ -51,8 +51,6 @@ class Game extends Phaser.Scene {
 
     axios.get(SERVER_URL + '/api/rooms/' + ROOM_ID)
       .then((res) => {
-        console.log(res.header);
-
         scene.timeoutSec = res.data.timeout;
         scene.cards = res.data.cards;
         scene.maxCards = res.data.maxCards;
@@ -111,21 +109,16 @@ class Game extends Phaser.Scene {
 
   startGame() {
     //render music
-    // let themeSong = this.sound.add('theme_song');
-    // themeSong.setLoop(true);
-    // themeSong.play();
+    let themeSong = this.sound.add('theme_song');
+    themeSong.setLoop(true);
+    themeSong.play();
     
-    // this..addDownCallback(function() {
+    // this.input.addDownCallback(function() {
     //   if (game.sound.context.state === 'suspended') {
     //     this.sound.context.resume();
     //   }
+    //   console.log("this is down callback")
     // })
-
-    // this.setInteractive().on('pointerdown', (pointer) => {
-    //   if (game.sound.context.state === 'suspended') {
-    //     this.sound.context.resume();
-    //   }
-    // });
 
     this.isGameStart = true;
     this.renderAnswer();

@@ -4,6 +4,19 @@ var db = require('./models');
 // var Clazz = require('./models/clazz');
 // var Player = require('./models/player');
 
+// Admin Routing
+gameroute.get('/admin', (req, res) => {
+  // return res.sendFile(__dirname + '/public/game/admin.html');
+  let result = {
+    one: "Singular sensation",
+    two: "Beady little eyes",
+    three: "Little birds pitch by my doorstep"
+  }
+
+  return res.send(result);
+});
+
+
 // Game Routing
 gameroute.get('/game', (req, res) => {
   let rid = req.query.room;

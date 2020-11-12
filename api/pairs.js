@@ -69,4 +69,78 @@ router.put('/api/pairs', cardUpload.array('images', 2), (req, res, next) => {
 
 });
 
+router.put('/api/pairs/single', cardUpload.single('image') , (req, res, next) => {
+  if (!req.query.class_id) res.header('Content-Type', 'application/json').sendStatus(422, "Class Id Required");
+
+  let cardId = req.body.card_id;
+  let classId = req.query.class_id;
+
+  try {
+    var body = {}
+    body.files = req.file;
+    body.id = req.body.card_id;
+
+    let staticPath = global.CARD_IMAGE_STATIC_PATH;
+
+    db.Card.findOne({where: { classId: classId, number: cardId}})
+      .then((card) => {
+        // if (typeof card == 'undefined' || !card) return res.sendStatus(404);
+
+        card.image = staticPath + req.file.filename;
+        card.save();
+
+        res.send(card);
+      })
+      .catch((err) => {
+        console.error(JSON.stringify(err));
+        res.status(500).send(err);  
+      });   
+
+  } catch (error) {
+    console.log(error);
+    return res.sendStatus(400);
+  }
+
+  // checking class is exist and insert data
+  // db.Clazz.findOne({where: {id : classId}, include: ['cards']})
+  //   .then((clazz) => {
+  //     if (typeof clazz == 'undefined' || !clazz) return res.sendStatus(404);
+
+  //     try {
+  //       var body = {};
+  //       body.files = req.files;
+  //       body.ids = req.body.card_id;
+
+  //       var cards = []
+  //       let staticPath = global.CARD_IMAGE_STATIC_PATH;
+
+  //       db.Card.findAll({ 
+  //         where: { 
+  //           classId: clazz.id,
+  //           number: {
+  //             [Sequelize.Op.in]: body.ids
+  //           }
+  //         }
+  //       })
+  //       .then((cards) => {
+  //         cards.forEach((card, i) => {
+  //           console.log('Updating number', card.number);
+  //           card.image = staticPath + body.files[i].filename;
+  //           card.save();
+  //         });
+
+  //         return res.send(cards);
+  //       })
+  //       .catch((err) => {
+  //         console.error(JSON.stringify(err));
+  //         res.status(500).send(err);  
+  //       });   
+  //     } catch (error) {
+  //       console.log(error);
+  //       return res.sendStatus(400);
+  //     }
+  //   });
+
+});
+
 module.exports = router;

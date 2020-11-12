@@ -241,6 +241,7 @@ io.on('connection', function(socket) {
 });
 
 // enabling body parser to support http body
+app.use(cors());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 

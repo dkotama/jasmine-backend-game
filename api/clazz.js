@@ -50,9 +50,16 @@ router.get('/api/classes', (req, res) => {
 
   let moodleId = (typeof req.query.moodle_id != 'undefined') ? parseInt(req.query.moodle_id) : null;
   let classId = parseInt(req.query.id);
-  let filter = (moodleId != null) ? { where : { moodleId : moodleId } } : { where: { id: classId } };
+  // let filter = (moodleId != null) ? { where : { moodleId : moodleId } } : { where: { id: classId } };
 
-  db.Clazz.findOne(filter)
+  db.Clazz.findOne({
+    where: { moodleId: moodleId },
+    include: [{
+            model: db.Card,
+            as: 'cards',
+            required: true
+        }]
+    })
     .then((clazz) => {
       if (typeof clazz == 'undefined' || !clazz) return res.sendStatus(404);
 
@@ -76,20 +83,25 @@ router.put('/api/classes', (req, res) => {
 
   let classId = req.query.id;
 
-  var edited = {};
+  var edited = {
+    timeout: parseInt(req.body.timeout),
+    correctMx: parseInt(req.body.correctMx),
+    falseMx: parseInt(req.body.falseMx) 
+  };
 
-  (!req.body.timeout) ? edited.timeout = parseInt(req.body.timeout) : null;
-  (!req.body.correctMx) ? edited.correctMx = parseInt(req.body.timeout) : null;
-  (!req.body.falseMx) ? edited.falseMx = parseInt(req.body.timeout) : null;
-  (!req.body.pairs ) ? edited.timeout = parseInt(req.body.timeout) : null;
 
-  res.send(edited);
+  // (!req.body.timeout) ? edited.timeout = parseInt(req.body.timeout) : null;
+  // (!req.body.correctMx) ? edited.correctMx = parseInt(req.body.correctMx) : null;
+  // (!req.body.falseMx) ? edited.falseMx = parseInt(req.body.falseMx) : null;
 
-  db.Clazz.findOne({ where: {moodleId : classId}})
+// res.send(edited);
+
+  db.Clazz.findOne({ where: {id : classId}})
     .then((clazz) => {
       if (typeof clazz == 'undefined' || !clazz) return res.sendStatus(404);
+      clazz.update(edited);
 
-      return res.send(clazz.update(edited));
+      return res.send(clazz);
     })
     .catch((err) => {
       console.error(JSON.stringify(err));

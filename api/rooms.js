@@ -28,7 +28,14 @@ router.post('/api/rooms', (req, res) => {
 
       db.Room.bulkCreate(rooms, { returning: true })
         .then(rs => {
-          db.Room.findAll({where: {classId: clazz.id}})
+          db.Room.findAll(
+            {
+              limit: seed,
+              where: {
+                classId: clazz.id
+              },
+              order: [ [ 'createdAt', 'DESC' ]]
+            })
             .then((rooms) => {
               return res.send(rooms);
             })
@@ -106,15 +113,30 @@ router.post('/api/rooms/attach', (req, res) => {
 
       var body = {};
       body.moodleIds = req.body.moodle_id;
-      body.names = req.body.name;
 
-      body.moodleIds.forEach((b, i) => {
-        var player = {};
-        player.roomId = room.id;
-        player.moodleId = b;
-        player.name =  body.names[i];
-        players.push(player);
-      });
+      var player = {};
+      player.roomId = room.id;
+
+      // body.p1Id = req.body.p1_id;
+      // body.p2Id = req.body.p2_id;
+
+      player.moodleId = req.body.p1_id;
+      player.name =  req.body.p1_name;
+      players.push(player);
+
+      var temp = {}
+      temp.roomId = room.id;
+      temp.moodleId = req.body.p2_id;
+      temp.name =  req.body.p2_name;
+      players.push(temp);
+
+      // body.p1Name = req.body.p1_name;
+      // body.p2Name = req.body.p2_name;
+      
+      // body.names = req.body.name;
+
+      // body.moodleIds.forEach((b, i) => {
+      // });
 
       db.Player.findAll({where: {roomId: room.id}})
         .then(_players => {
@@ -122,7 +144,7 @@ router.post('/api/rooms/attach', (req, res) => {
             // empty 
             db.Player.bulkCreate(players)
               .then(__players => {
-                return res.send(players);
+                return res.send(__players);
               });
           }
 
@@ -135,9 +157,11 @@ router.post('/api/rooms/attach', (req, res) => {
             players[i].id = p.id;
 
             p.save();
+
           });
 
-          return res.send(players);
+          return res.send(_players);
+
         });
     })
     .catch((err) => {
@@ -156,10 +180,48 @@ router.get('/api/rooms', (req, res) => {
 
   let classId = parseInt(req.query.class_id);
 
-  db.Room.findAll({ where: { classId: classId } })
+  db.Room.findAll({
+    where  : { classId: classId},
+    include: [{
+                model: db.Player,
+                as: 'players',
+                required: true
+            }]
+  })
     .then((rooms) => {
       if (typeof rooms == 'undefined' || !rooms) return res.sendStatus(404);
+      var _rooms = [];
+    //   "id": 10,
+    // "classId": 17,
+    // "sequences": "1,10,2,3,5,8,7,6,9,4",
+    // "state": 0,
+    // "createdAt": "2020-10-04T08:49:30.836Z",
+    // "updatedAt": "2020-10-04T08:49:30.836Z"
+      rooms.forEach(room => {
+        // console.log(room.id);
+        
+        let r = {};
+        r.id = room.id;
+        r.classId = room.classId;
+        r.sequences = room.sequences;
+        r.state = room.state;
+        r.players = [];
 
+        db.Player.findAll({ where: { roomId: room.id} })
+          .then((players) => {
+
+            players.forEach(p => {
+              var _p = {
+                id: p.id,
+                name: p.name
+              };
+              r.players.push(_p);
+            })
+
+            _rooms.push(r);
+          });
+      });
+      
       return res.send(rooms);
     })
     .catch((err) => {
